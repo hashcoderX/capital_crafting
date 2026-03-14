@@ -1,0 +1,27 @@
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.vercel/
+
+# Laravel / PHP
+backend/vendor/
+backend/.env
+backend/bootstrap/cache/*.php
+backend/storage/*.key
+backend/storage/logs/*.log
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/testing/*
+backend/storage/framework/views/*
+backend/public/storage
+
+# Generated certificate artifacts
+backend/storage/app/public/certificates/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+*.swp
+*.swo
