@@ -92,6 +92,7 @@ type InvestmentRecord = {
   notes?: string | null;
   certificate_code?: string | null;
   certificate_pdf_url?: string | null;
+  balance_confirmation_pdf_url?: string | null;
   certificate_qr_url?: string | null;
   created_at: string;
 };
@@ -610,6 +611,7 @@ export default function AdminInvestmentsPage() {
                   <th className="px-3 py-2 font-medium">Return</th>
                   <th className="px-3 py-2 font-medium">Time Range</th>
                   <th className="px-3 py-2 font-medium">Certificate</th>
+                  <th className="px-3 py-2 font-medium">Balance Letter</th>
                 </tr>
               </thead>
               <tbody>
@@ -647,11 +649,25 @@ export default function AdminInvestmentsPage() {
                         )}
                       </div>
                     </td>
+                    <td className="px-3 py-2 text-slate-300">
+                      {investment.balance_confirmation_pdf_url ? (
+                        <a
+                          href={investment.balance_confirmation_pdf_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-medium text-emerald-300 hover:text-emerald-200"
+                        >
+                          Download Balance PDF
+                        </a>
+                      ) : (
+                        <span className="text-[11px] text-slate-500">Not available</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {investments.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-3 py-4 text-center text-slate-400">
+                    <td colSpan={9} className="px-3 py-4 text-center text-slate-400">
                       No investments registered yet.
                     </td>
                   </tr>

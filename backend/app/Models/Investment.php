@@ -27,6 +27,7 @@ class Investment extends Model
         'notes',
         'certificate_code',
         'certificate_pdf_path',
+        'balance_confirmation_pdf_path',
         'certificate_qr_path',
         'created_by_admin_id',
     ];

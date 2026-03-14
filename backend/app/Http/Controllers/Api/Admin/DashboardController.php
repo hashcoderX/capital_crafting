@@ -237,11 +237,18 @@ class DashboardController extends Controller
                 'notes',
                 'certificate_code',
                 'certificate_pdf_path',
+                'balance_confirmation_pdf_path',
                 'certificate_qr_path',
                 'created_at',
             ]);
 
         $investments = $investments->map(function (Investment $investment) {
+            if (!$investment->balance_confirmation_pdf_path) {
+                $investment->update([
+                    'balance_confirmation_pdf_path' => $this->generateBalanceConfirmationPdf($investment),
+                ]);
+            }
+
             return [
                 'id' => $investment->id,
                 'customer_name' => $investment->customer_name,
@@ -257,6 +264,9 @@ class DashboardController extends Controller
                 'certificate_code' => $investment->certificate_code,
                 'certificate_pdf_url' => $investment->certificate_pdf_path
                     ? url('storage/' . $investment->certificate_pdf_path) . '?v=' . optional($investment->updated_at)->timestamp
+                    : null,
+                'balance_confirmation_pdf_url' => $investment->balance_confirmation_pdf_path
+                    ? url('storage/' . $investment->balance_confirmation_pdf_path) . '?v=' . optional($investment->updated_at)->timestamp
                     : null,
                 'certificate_qr_url' => $investment->certificate_qr_path
                     ? url('storage/' . $investment->certificate_qr_path)
@@ -356,8 +366,11 @@ class DashboardController extends Controller
         $investment->update([
             'certificate_code' => $certificateCode,
             'certificate_pdf_path' => $pdfPath,
+            'balance_confirmation_pdf_path' => $this->generateBalanceConfirmationPdf($investment),
             'certificate_qr_path' => $qrPath,
         ]);
+
+        $investment->refresh();
 
         return response()->json([
             'message' => 'Investment registered successfully.',
@@ -375,10 +388,44 @@ class DashboardController extends Controller
                 'notes' => $investment->notes,
                 'certificate_code' => $investment->certificate_code,
                 'certificate_pdf_url' => url('storage/' . $investment->certificate_pdf_path) . '?v=' . now()->timestamp,
+                'balance_confirmation_pdf_url' => $investment->balance_confirmation_pdf_path
+                    ? url('storage/' . $investment->balance_confirmation_pdf_path) . '?v=' . now()->timestamp
+                    : null,
                 'certificate_qr_url' => url('storage/' . $investment->certificate_qr_path),
                 'created_at' => $investment->created_at,
             ],
         ], 201);
+    }
+
+    private function generateBalanceConfirmationPdf(Investment $investment): string
+    {
+        $asOfDate = now()->format('Y-m-d');
+        $accountNumber = 'ACC-' . str_pad((string) $investment->id, 6, '0', STR_PAD_LEFT);
+
+        $pdf = Pdf::loadView('certificates.balance-confirmation-letter', [
+            'investment' => $investment,
+            'asOfDate' => $asOfDate,
+            'accountNumber' => $accountNumber,
+            'withdrawnAmount' => 0,
+            'withdrawalMethod' => 'N/A',
+            'withdrawalDate' => '-',
+        ])->setPaper('a4', 'portrait');
+
+        $fileKey = $investment->certificate_code ?: ('INV-' . $investment->id);
+        $pdfPath = 'certificates/balance-confirmations/' . $fileKey . '.pdf';
+        $pdfBinary = $pdf->output();
+
+        Storage::disk('public')->put($pdfPath, $pdfBinary);
+
+        // Keep a static frontend copy updated for direct public access at /capital_crafting.pdf.
+        $frontendPublicPdfPath = dirname(base_path()) . DIRECTORY_SEPARATOR
+            . 'frontend' . DIRECTORY_SEPARATOR
+            . 'public' . DIRECTORY_SEPARATOR
+            . 'capital_crafting.pdf';
+
+        @file_put_contents($frontendPublicPdfPath, $pdfBinary);
+
+        return $pdfPath;
     }
 
     private function generateCertificateCode(): string
